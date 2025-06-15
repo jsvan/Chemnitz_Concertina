@@ -58,7 +58,7 @@ const concertinaData = {
     {"button": "6/0", "row": "row3", "push": "D#5", "pull": "F5"},
     {"button": "5/0", "row": "row3", "push": "F#5", "pull": "C#5"},
     {"button": "10", "row": "row3", "push": "A#4", "pull": "D#5"},
-    {"button": "11", "row": "row3", "push": "G#5", "pull": "D#5"},
+    {"button": "11", "row": "row3", "push": "G#5", "pull": "D#4"},
     {"button": "12", "row": "row3", "push": "B5", "pull": "A5"},
     {"button": "13", "row": "row3", "push": "E6", "pull": "C#6"},
     {"button": "14", "row": "row3", "push": "D6", "pull": "D6"},

@@ -11,25 +11,16 @@
         <header>
             <h1>Chemnitz Concertina Practice</h1>
             <div class="controls2">
-                <div class="main-controls2">
-                    <div class="toggle-container2">
-                        <span class="toggle-label">Pull</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="push-pull-toggle">
-                            <span class="slider"></span>
-                        </label>
-                        <span class="toggle-label">Push</span>
-                    </div>
-                    
-                    <div class="control-group2" style="display: none;">
-                        <span class="control-label">Hand:</span>
+                <!-- Row 1: Three Toggles -->
+                <div class="controls-row toggles-row">
+                    <div class="control-group2">
                         <div class="toggle-container2">
-                            <span class="toggle-label">Left</span>
+                            <span class="toggle-label">Pull</span>
                             <label class="toggle-switch">
-                                <input type="checkbox" id="scale-hand-toggle">
+                                <input type="checkbox" id="push-pull-toggle">
                                 <span class="slider"></span>
                             </label>
-                            <span class="toggle-label">Right</span>
+                            <span class="toggle-label">Push</span>
                         </div>
                     </div>
                     
@@ -56,13 +47,12 @@
                             <span class="toggle-label">Note</span>
                         </div>
                     </div>
-                    
-                    <button id="play-scale">Play Scale (Both Hands)</button>
                 </div>
-                <div class="key-selector2">
+                
+                <!-- Row 2: Key Selector -->
+                <div class="controls-row key-row">
                     <span class="control-label">Key:</span>
-                    <div class="key-row-container">
-                        <div class="key-row2">
+                    <div class="key-row2">
                         <label class="key-option">
                             <span class="key-label">C</span>
                             <input type="radio" name="scale-key" value="C" checked>
@@ -111,10 +101,29 @@
                             <span class="key-label">C#</span>
                             <input type="radio" name="scale-key" value="C#">
                         </label>
-                        </div>
-                        <button id="play-note">Play Note</button>
                     </div>
                 </div>
+                
+                <!-- Row 3: Play Controls and Progress -->
+                <div class="controls-row play-controls-row">
+                    <button id="play-note">Play Note</button>
+                    
+                    <div class="scale-controls">
+                        <button id="play-scale">Play Scale (Both Hands)</button>
+                        <button id="pause-scale" style="display: none;">Pause</button>
+                    </div>
+                    
+                    <div class="scale-progress-container">
+                        <div class="progress-wrapper">
+                            <input type="range" id="scale-progress" min="0" max="100" value="0" class="scale-slider">
+                            <div class="progress-labels">
+                                <span>Start</span>
+                                <span>End</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="current-notes">
                     <span id="notes-display">Click a button to hear notes</span>
                 </div>
@@ -139,12 +148,14 @@
 
         <section class="reference-chart">
             <div class="chart-container">
-                <img src="Screenshot 2025-06-13 at 17.50.03.png" alt="Chemnitzer Concertina Button Layout" class="reference-image" />
+                <a href="https://concertinamusic.com/frequent-questions/#learn" target="_blank" rel="noopener noreferrer">
+                    <img src="Screenshot 2025-06-13 at 17.50.03.png" alt="Chemnitzer Concertina Button Layout" class="reference-image" />
+                </a>
             </div>
         </section>
     </div>
 
-    <script src="concertina-data.js"></script>
+    <script src="concertina-data.js?v=1"></script>
     <script src="script.js"></script>
     
     <script>

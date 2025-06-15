@@ -4,7 +4,13 @@ class ConcertinaApp {
         this.isPush = false;
         this.scaleAnimation = null;
         this.isPlayingScale = false;
+        this.isPaused = false;
         this.showNotes = false;
+        
+        // Scale progress tracking
+        this.currentScaleIndex = 0;
+        this.currentScaleNotes = [];
+        this.scaleTimeoutId = null;
         // Base frequencies for C4 octave (middle C = C4)
         this.baseFrequencies = {
             'c': 261.63,
@@ -309,51 +315,181 @@ class ConcertinaApp {
     
     setupScaleControls() {
         const playButton = document.getElementById('play-scale');
+        const pauseButton = document.getElementById('pause-scale');
         const playNoteButton = document.getElementById('play-note');
+        const scaleSlider = document.getElementById('scale-progress');
         
         playButton.addEventListener('click', () => this.playScale());
+        pauseButton.addEventListener('click', () => this.pauseScale());
         playNoteButton.addEventListener('click', () => this.playSelectedNote());
+        
+        // Handle slider input changes
+        if (scaleSlider) {
+            scaleSlider.addEventListener('input', (e) => {
+                if (this.currentScaleNotes.length > 0) {
+                    this.currentScaleIndex = this.getScaleIndexFromSlider();
+                    
+                    // If currently playing, pause and resume from new position
+                    if (this.isPlayingScale) {
+                        this.pauseScale();
+                        // Small delay to ensure pause is processed
+                        setTimeout(() => {
+                            this.resumeScale();
+                        }, 100);
+                    }
+                }
+            });
+            
+            // Handle double-click to jump to position when paused
+            scaleSlider.addEventListener('dblclick', (e) => {
+                if (this.isPaused && this.currentScaleNotes.length > 0) {
+                    this.currentScaleIndex = this.getScaleIndexFromSlider();
+                    this.updateNotesDisplay(`Jumped to position ${this.currentScaleIndex + 1} of ${this.currentScaleNotes.length}`);
+                }
+            });
+        }
+        
+        // Add event listeners for key and scale type changes during playback
+        const keyRadios = document.querySelectorAll('input[name="scale-key"]');
+        keyRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                if (this.isPlayingScale || this.isPaused) {
+                    this.regenerateScaleForNewKey();
+                }
+            });
+        });
+        
+        const scaleTypeToggle = document.getElementById('scale-type-toggle');
+        if (scaleTypeToggle) {
+            scaleTypeToggle.addEventListener('change', () => {
+                if (this.isPlayingScale || this.isPaused) {
+                    this.regenerateScaleForNewKey();
+                }
+            });
+        }
     }
     
     async playScale() {
-        if (this.isPlayingScale) return;
-        
+        if (this.isPaused) {
+            // Resume from current position
+            this.resumeScale();
+        } else if (this.isPlayingScale) {
+            return; // Already playing
+        } else {
+            // Start new scale
+            this.startScale();
+        }
+    }
+    
+    startScale() {
         const direction = this.isPush ? 'push' : 'pull';
         const key = document.querySelector('input[name="scale-key"]:checked').value;
         const type = document.getElementById('scale-type-toggle').checked ? 'minor' : 'major';
         
         // Generate the theoretical scale starting at octave 2 for left hand
-        const scaleNotes = this.generateScale(key, type, 2);
+        this.currentScaleNotes = this.generateScale(key, type, 2);
         
-        if (scaleNotes.length === 0) {
+        if (this.currentScaleNotes.length === 0) {
             this.updateNotesDisplay('Scale not available for this configuration');
             return;
         }
         
+        this.currentScaleIndex = 0;
         this.isPlayingScale = true;
-        document.getElementById('play-scale').disabled = true;
+        this.isPaused = false;
         
-        for (let i = 0; i < scaleNotes.length; i++) {
-            if (!this.isPlayingScale) break;
-            
-            const scaleNote = scaleNotes[i];
-            
-            // Find buttons for both hands at this scale degree
-            const leftButtonId = this.getButtonForNote(scaleNote.note, scaleNote.leftOctave, 'left', direction);
-            const rightButtonId = this.getButtonForNote(scaleNote.note, scaleNote.rightOctave, 'right', direction);
-            
-            // Only play and wait if at least one button is available
-            if (leftButtonId || rightButtonId) {
-                // Play both hands simultaneously at this step
-                await this.playBothHandsNoteByButton(leftButtonId, rightButtonId, direction, key, type, scaleNote);
-                await this.delay(1000); // One second between notes
-            }
-            // If no buttons available, skip immediately without delay
+        // Update button states
+        const playButton = document.getElementById('play-scale');
+        const pauseButton = document.getElementById('pause-scale');
+        playButton.style.display = 'none';
+        pauseButton.style.display = 'inline-block';
+        
+        this.playScaleStep();
+    }
+    
+    resumeScale() {
+        if (!this.isPaused || this.currentScaleNotes.length === 0) return;
+        
+        this.isPlayingScale = true;
+        this.isPaused = false;
+        
+        // Update button states
+        const playButton = document.getElementById('play-scale');
+        const pauseButton = document.getElementById('pause-scale');
+        playButton.style.display = 'none';
+        pauseButton.style.display = 'inline-block';
+        
+        this.playScaleStep();
+    }
+    
+    pauseScale() {
+        this.isPlayingScale = false;
+        this.isPaused = true;
+        
+        // Clear any pending timeout
+        if (this.scaleTimeoutId) {
+            clearTimeout(this.scaleTimeoutId);
+            this.scaleTimeoutId = null;
         }
         
+        // Update button states
+        const playButton = document.getElementById('play-scale');
+        const pauseButton = document.getElementById('pause-scale');
+        playButton.textContent = 'Resume Scale';
+        playButton.style.display = 'inline-block';
+        pauseButton.style.display = 'none';
+        
+        this.updateNotesDisplay('Scale paused');
+    }
+    
+    stopScale() {
         this.isPlayingScale = false;
-        document.getElementById('play-scale').disabled = false;
-        this.updateNotesDisplay('Scale finished');
+        this.isPaused = false;
+        
+        // Clear any pending timeout
+        if (this.scaleTimeoutId) {
+            clearTimeout(this.scaleTimeoutId);
+            this.scaleTimeoutId = null;
+        }
+        
+        this.resetScaleProgress();
+        this.updateNotesDisplay('Scale stopped');
+    }
+    
+    async playScaleStep() {
+        if (!this.isPlayingScale || this.currentScaleIndex >= this.currentScaleNotes.length) {
+            // Scale finished
+            this.stopScale();
+            this.updateNotesDisplay('Scale finished');
+            return;
+        }
+        
+        const direction = this.isPush ? 'push' : 'pull';
+        const key = document.querySelector('input[name="scale-key"]:checked').value;
+        const type = document.getElementById('scale-type-toggle').checked ? 'minor' : 'major';
+        const scaleNote = this.currentScaleNotes[this.currentScaleIndex];
+        
+        // Update progress slider
+        this.updateScaleProgress();
+        
+        // Find buttons for both hands at this scale degree
+        const leftButtonId = this.getButtonForNote(scaleNote.note, scaleNote.leftOctave, 'left', direction);
+        const rightButtonId = this.getButtonForNote(scaleNote.note, scaleNote.rightOctave, 'right', direction);
+        
+        // Play the note(s) if available
+        if (leftButtonId || rightButtonId) {
+            await this.playBothHandsNoteByButton(leftButtonId, rightButtonId, direction, key, type, scaleNote);
+        }
+        
+        // Move to next note
+        this.currentScaleIndex++;
+        
+        // Schedule next step (both for played and skipped notes)
+        if (this.isPlayingScale) {
+            this.scaleTimeoutId = setTimeout(() => {
+                this.playScaleStep();
+            }, 1000);
+        }
     }
     
     async playBothHandsNote(leftButtonId, rightButtonId, direction, key, type) {
@@ -577,6 +713,67 @@ class ConcertinaApp {
     
     delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    
+    updateScaleProgress() {
+        const slider = document.getElementById('scale-progress');
+        if (slider && this.currentScaleNotes.length > 0) {
+            const progress = (this.currentScaleIndex / this.currentScaleNotes.length) * 100;
+            slider.value = progress;
+        }
+    }
+    
+    getScaleIndexFromSlider() {
+        const slider = document.getElementById('scale-progress');
+        if (slider && this.currentScaleNotes.length > 0) {
+            const progress = parseFloat(slider.value);
+            return Math.floor((progress / 100) * this.currentScaleNotes.length);
+        }
+        return 0;
+    }
+    
+    resetScaleProgress() {
+        this.currentScaleIndex = 0;
+        this.currentScaleNotes = [];
+        this.isPaused = false;
+        this.updateScaleProgress();
+        
+        // Reset button states
+        const playButton = document.getElementById('play-scale');
+        const pauseButton = document.getElementById('pause-scale');
+        playButton.textContent = 'Play Scale (Both Hands)';
+        playButton.style.display = 'inline-block';
+        pauseButton.style.display = 'none';
+    }
+    
+    regenerateScaleForNewKey() {
+        if (this.currentScaleNotes.length === 0) return;
+        
+        // Calculate current relative position (0.0 to 1.0)
+        const currentProgress = this.currentScaleIndex / this.currentScaleNotes.length;
+        
+        // Get current key and type from UI
+        const key = document.querySelector('input[name="scale-key"]:checked').value;
+        const type = document.getElementById('scale-type-toggle').checked ? 'minor' : 'major';
+        
+        // Generate new scale notes
+        const oldScaleLength = this.currentScaleNotes.length;
+        this.currentScaleNotes = this.generateScale(key, type, 2);
+        
+        if (this.currentScaleNotes.length === 0) {
+            this.updateNotesDisplay(`${key} ${type} scale not available`);
+            this.stopScale();
+            return;
+        }
+        
+        // Maintain relative position in new scale
+        this.currentScaleIndex = Math.floor(currentProgress * this.currentScaleNotes.length);
+        
+        // Update progress slider to reflect new position
+        this.updateScaleProgress();
+        
+        // Update display
+        this.updateNotesDisplay(`Switched to ${key} ${type} - continuing from position ${this.currentScaleIndex + 1} of ${this.currentScaleNotes.length}`);
     }
 }
 
