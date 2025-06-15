@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemnitz Concertina Practice</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Chemnitz Concertina Practice</h1>
+            <div class="controls2">
+                <div class="main-controls2">
+                    <div class="toggle-container2">
+                        <span class="toggle-label">Pull</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="push-pull-toggle">
+                            <span class="slider"></span>
+                        </label>
+                        <span class="toggle-label">Push</span>
+                    </div>
+                    
+                    <div class="control-group2" style="display: none;">
+                        <span class="control-label">Hand:</span>
+                        <div class="toggle-container2">
+                            <span class="toggle-label">Left</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="scale-hand-toggle">
+                                <span class="slider"></span>
+                            </label>
+                            <span class="toggle-label">Right</span>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group2">
+                        <span class="control-label">Type:</span>
+                        <div class="toggle-container2">
+                            <span class="toggle-label">Major</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="scale-type-toggle">
+                                <span class="slider"></span>
+                            </label>
+                            <span class="toggle-label">Minor</span>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group2">
+                        <span class="control-label">Display:</span>
+                        <div class="toggle-container2">
+                            <span class="toggle-label">Key</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="display-toggle" onchange="forceToggleDisplay(this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                            <span class="toggle-label">Note</span>
+                        </div>
+                    </div>
+                    
+                    <button id="play-scale">Play Scale (Both Hands)</button>
+                </div>
+                <div class="key-selector2">
+                    <span class="control-label">Key:</span>
+                    <div class="key-row-container">
+                        <div class="key-row2">
+                        <label class="key-option">
+                            <span class="key-label">C</span>
+                            <input type="radio" name="scale-key" value="C" checked>
+                        </label>
+                        <label class="key-option">
+                            <span class="key-label">G</span>
+                            <input type="radio" name="scale-key" value="G">
+                        </label>
+                        <label class="key-option">
+                            <span class="key-label">D</span>
+                            <input type="radio" name="scale-key" value="D">
+                        </label>
+                        <label class="key-option">
+                            <span class="key-label">A</span>
+                            <input type="radio" name="scale-key" value="A">
+                        </label>
+                        <label class="key-option">
+                            <span class="key-label">E</span>
+                            <input type="radio" name="scale-key" value="E">
+                        </label>
+                        <label class="key-option">
+                            <span class="key-label">B</span>
+                            <input type="radio" name="scale-key" value="B">
+                        </label>
+                        <label class="key-option">
+                            <span class="key-label">F#</span>
+                            <input type="radio" name="scale-key" value="F#">
+                        </label>
+                        <label class="key-option">
+                            <span class="key-label">F</span>
+                            <input type="radio" name="scale-key" value="F">
+                        </label>
+                        <label class="key-option">
+                            <span class="key-label">A#</span>
+                            <input type="radio" name="scale-key" value="A#">
+                        </label>
+                        <label class="key-option">
+                            <span class="key-label">D#</span>
+                            <input type="radio" name="scale-key" value="D#">
+                        </label>
+                        <label class="key-option">
+                            <span class="key-label">G#</span>
+                            <input type="radio" name="scale-key" value="G#">
+                        </label>
+                        <label class="key-option">
+                            <span class="key-label">C#</span>
+                            <input type="radio" name="scale-key" value="C#">
+                        </label>
+                        </div>
+                        <button id="play-note">Play Note</button>
+                    </div>
+                </div>
+                <div class="current-notes">
+                    <span id="notes-display">Click a button to hear notes</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="concertina-layout">
+            <div class="right-hand">
+                <h2>Right Hand</h2>
+                <div class="button-grid right-grid">
+                    <!-- Right hand buttons will be generated by JavaScript -->
+                </div>
+            </div>
+            
+            <div class="left-hand">
+                <h2>Left Hand</h2>
+                <div class="button-grid left-grid">
+                    <!-- Left hand buttons will be generated by JavaScript -->
+                </div>
+            </div>
+        </main>
+
+        <section class="reference-chart">
+            <div class="chart-container">
+                <img src="Screenshot 2025-06-13 at 17.50.03.png" alt="Chemnitzer Concertina Button Layout" class="reference-image" />
+            </div>
+        </section>
+    </div>
+
+    <script src="concertina-data.js"></script>
+    <script src="script.js"></script>
+    
+    <script>
+    function forceToggleDisplay(showNotes) {
+        const buttons = document.querySelectorAll('.concertina-button');
+        const isPush = document.getElementById('push-pull-toggle').checked;
+        
+        // Unicode subscript digit mapping
+        const subscriptMap = {
+            '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄',
+            '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉'
+        };
+        
+        buttons.forEach(button => {
+            if (showNotes) {
+                // Show note based on push/pull state
+                const note = isPush ? button.dataset.push : button.dataset.pull;
+                if (note) {
+                    // Convert note format like "F#3" to "F#₃" using Unicode subscripts
+                    const noteWithSubscript = note.replace(/(\d+)$/, (match) => {
+                        return match.split('').map(digit => subscriptMap[digit] || digit).join('');
+                    });
+                    button.textContent = noteWithSubscript;
+                } else {
+                    button.textContent = button.dataset.buttonId;
+                }
+            } else {
+                // Show button ID
+                button.textContent = button.dataset.buttonId;
+            }
+        });
+    }
+    
+    // Make function globally available
+    window.forceToggleDisplay = forceToggleDisplay;
+    </script>
+</body>
+</html>
